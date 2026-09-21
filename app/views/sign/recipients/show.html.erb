@@ -5,8 +5,11 @@
   class: "sign-page",
   data: {
     controller: "recipients",
-    recipients_price_value: @price_per_signature,
-    recipients_signers_value: @signers
+    recipients_signature_price_cents_value: @signature_price_cents,
+    recipients_meterai_price_cents_value: @meterai_price_cents,
+    recipients_signers_value: @signers,
+    recipients_order_mode_value: "parallel",
+    recipients_envelope_id_value: @envelope_id
   }
 ) do %>
   <%= render "sign/shared/stepper", current_step: 2 %>
@@ -17,10 +20,17 @@
       <p class="sign-subtitle">Everyone below is invited at the same time. Fields are placed manually in the next step.</p>
     </div>
 
-    <div class="sign-signers">
-      <div data-recipients-target="list"></div>
+    <div class="sign-order" role="group" aria-label="Signing order" style="display: none;">
+      <button type="button" class="sign-order__btn is-active" data-mode="parallel" data-action="recipients#setOrderMode" aria-pressed="true">Parallel</button>
+      <button type="button" class="sign-order__btn" data-mode="sequential" data-action="recipients#setOrderMode" aria-pressed="false">Sequential</button>
+    </div>
 
-      <button type="button" class="sign-add-signer" data-action="recipients#addSigner">
+    <div class="sign-banner" data-recipients-target="banner" hidden></div>
+
+    <div class="sign-signers">
+      <div class="sign-signers__list" data-recipients-target="list"></div>
+
+      <button type="button" class="sign-add-signer" data-recipients-target="add" data-action="recipients#addSigner">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
         Add signer
       </button>
@@ -28,27 +38,37 @@
 
     <div class="sign-summary">
       <div class="sign-summary__copy">
-        <span class="sign-summary__title">
-          <span data-recipients-target="totalSignatures">0</span> signatures ×
-          <span data-recipients-target="unitPrice">Rp 0</span> per signature
-        </span>
-        <span class="sign-summary__hint">Deducted from your signature balance when the document is sent. Materai is billed separately.</span>
+        <span class="sign-summary__title" data-recipients-target="signatureLine">0 signatures × Rp0,00</span>
+        <span class="sign-summary__title" data-recipients-target="meteraiLine">0 eMeterai × Rp0,00</span>
+        <div class="sign-quotas">
+          <span data-recipients-target="signatureQuota">Signature 0/<%= @signature_quota %></span>
+          <span data-recipients-target="meteraiQuota">eMeterai 0/<%= @meterai_quota %></span>
+        </div>
       </div>
       <div class="sign-summary__total">
         <span class="sign-summary__eyebrow">Total charge</span>
-        <span class="sign-summary__amount" data-recipients-target="totalCharge">Rp 0</span>
+        <span class="sign-summary__amount" data-recipients-target="totalCharge">Rp0,00</span>
       </div>
     </div>
   </div>
 
   <div class="sign-footer">
     <%= link_to "Back", sign_upload_path(@workspace_id), class: "sign-btn sign-btn--ghost" %>
-    <button type="button" class="sign-btn sign-btn--secondary">Save as draft</button>
-    <a href="#continue" class="sign-btn sign-btn--primary">Continue</a>
+    <button type="button" class="sign-btn sign-btn--secondary" disabled title="Save as draft is out of scope for this exercise">Save as draft</button>
+    <button type="button" class="sign-btn sign-btn--primary" data-recipients-target="continue" data-action="recipients#continue">Continue</button>
   </div>
 
   <template data-recipients-target="template">
     <div class="sign-signer" data-recipients-target="signer">
+      <div class="sign-field sign-field--step">
+        <label data-step-label>Step</label>
+        <div class="sign-count">
+          <button type="button" class="sign-count__btn" data-action="recipients#decrementStep" aria-label="Earlier step">−</button>
+          <input type="number" class="sign-input sign-input--count" min="1" data-field="step" data-action="input->recipients#update">
+          <button type="button" class="sign-count__btn" data-action="recipients#incrementStep" aria-label="Later step">+</button>
+        </div>
+      </div>
+
       <div class="sign-field">
         <label data-name-label>Full name</label>
         <input type="text" class="sign-input" placeholder="e.g. Rina Halim" data-field="name" data-action="input->recipients#update">
@@ -60,22 +80,33 @@
       </div>
 
       <div class="sign-field">
-        <label data-count-label>Signatures</label>
+        <label data-signature-label>Signatures</label>
         <div class="sign-count">
-          <button type="button" class="sign-count__btn" data-action="recipients#decrement" aria-label="Fewer signatures">−</button>
-          <input type="number" class="sign-input sign-input--count" min="1" max="20" data-field="count" data-action="input->recipients#update">
-          <button type="button" class="sign-count__btn" data-action="recipients#increment" aria-label="More signatures">+</button>
+          <button type="button" class="sign-count__btn" data-action="recipients#decrementSignature" aria-label="Fewer signatures">−</button>
+          <input type="number" class="sign-input sign-input--count" min="1" max="20" data-field="signature_count" data-action="input->recipients#update">
+          <button type="button" class="sign-count__btn" data-action="recipients#incrementSignature" aria-label="More signatures">+</button>
+        </div>
+      </div>
+
+      <div class="sign-field">
+        <label data-meterai-label>eMeterai</label>
+        <div class="sign-count">
+          <button type="button" class="sign-count__btn" data-action="recipients#decrementMeterai" aria-label="Fewer eMeterai">−</button>
+          <input type="number" class="sign-input sign-input--count" min="0" max="3" data-field="meterai_count" data-action="input->recipients#update">
+          <button type="button" class="sign-count__btn" data-action="recipients#incrementMeterai" aria-label="More eMeterai">+</button>
         </div>
       </div>
 
       <div class="sign-field sign-field--right">
         <span class="sign-field__label">Charge</span>
-        <span class="sign-charge-value" data-field="subtotal">Rp 0</span>
+        <span class="sign-charge-value" data-field="subtotal">Rp0,00</span>
       </div>
 
       <button type="button" class="sign-icon-btn sign-icon-btn--soft" data-action="recipients#remove" aria-label="Remove signer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12h7"></path></svg>
       </button>
+
+      <p class="sign-row-error" data-field="row-error" hidden></p>
     </div>
   </template>
 <% end %>

@@ -1,24 +1,12 @@
-# README
+# Esign Mekari (interview simulation)
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+```
+bin/setup
+bin/rails server
+bin/rails test
+node --test test/javascript/sign_rules.test.mjs
+```
 
-Things you may want to cover:
+App: `http://localhost:3000/sign/ws-a` (HTML). APIs: `POST /api/envelopes`, `POST /api/envelopes/:id/charge-preview`.
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+Identity `demo-a` is mapped server-side to workspace `ws-a`. A `workspace_id` from the client is not authorization. Envelopes are in-memory; SQL injection is not applicable, input is still validated.

@@ -41,7 +41,7 @@
           <div class="sign-or__line"></div>
         </div>
 
-        <a href="#cloud" class="sign-cloud-link" data-action="click->upload#ignore:stop">
+        <a href="#cloud" class="sign-cloud-link is-disabled" aria-disabled="true" title="From cloud is out of scope for this exercise" data-action="click->upload#ignore:stop">
           From cloud
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
         </a>
@@ -66,6 +66,6 @@
   </div>
 
   <div class="sign-footer">
-    <%= link_to "Continue", sign_recipients_path(@workspace_id), class: "sign-btn sign-btn--primary" %>
+    <a href="<%= sign_recipients_path(@workspace_id) %>" class="sign-btn sign-btn--primary is-disabled" data-upload-target="continue" data-action="click->upload#guardContinue" aria-disabled="true">Continue</a>
   </div>
 </div>

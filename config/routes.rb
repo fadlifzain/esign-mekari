@@ -11,4 +11,10 @@ Rails.application.routes.draw do
     get "/", to: "uploads#show", as: :upload
     get "/recipients", to: "recipients#show", as: :recipients
   end
+
+  namespace :api do
+    resources :envelopes, only: [ :create ] do
+      post :charge_preview, on: :member, path: "charge-preview"
+    end
+  end
 end

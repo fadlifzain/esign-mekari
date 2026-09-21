@@ -328,10 +328,16 @@ body.sign-flow {
   font-family: inherit;
 }
 
-.sign-btn--primary {
-  min-width: 140px;
-  background: var(--sign-accent);
-  color: #ffffff;
+.sign-btn.is-disabled,
+.sign-cloud-link.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.sign-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .sign-btn--ghost {
@@ -356,7 +362,46 @@ body.sign-flow {
 .sign-signers {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+}
+
+.sign-signers__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sign-order {
+  display: flex;
+  gap: 8px;
+}
+
+.sign-order__btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--sign-border-strong);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--sign-label);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sign-order__btn.is-active {
+  border-color: var(--sign-accent);
+  color: var(--sign-accent);
+  background: var(--sign-charge-bg);
+}
+
+.sign-banner {
+  border: 1px solid #f0b4b4;
+  background: #fdecec;
+  color: #9b1c1c;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
 }
 
 .sign-signer {
@@ -364,10 +409,33 @@ body.sign-flow {
   border-radius: 12px;
   padding: 18px 20px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 170px 118px 44px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 148px 148px 118px 44px;
   gap: 16px;
   align-items: end;
   box-sizing: border-box;
+}
+
+.sign-page.is-sequential .sign-signer {
+  grid-template-columns: 132px minmax(0, 1fr) minmax(0, 1fr) 148px 148px 118px 44px;
+}
+
+.sign-signer.is-invalid {
+  border-color: #f0b4b4;
+}
+
+.sign-row-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: #9b1c1c;
+}
+
+.sign-quotas {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--sign-muted);
 }
 
 .sign-field {
@@ -375,6 +443,14 @@ body.sign-flow {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.sign-field.sign-field--step {
+  display: none;
+}
+
+.sign-page.is-sequential .sign-field.sign-field--step {
+  display: flex;
 }
 
 .sign-field--right {
@@ -508,7 +584,7 @@ body.sign-flow {
   color: var(--sign-text);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1200px) {
   .sign-stepper,
   .sign-body,
   .sign-footer {
@@ -516,7 +592,8 @@ body.sign-flow {
     padding-right: 24px;
   }
 
-  .sign-signer {
+  .sign-signer,
+  .sign-page.is-sequential .sign-signer {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
