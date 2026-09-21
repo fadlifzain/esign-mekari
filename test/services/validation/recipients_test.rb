@@ -39,8 +39,24 @@ class Validation::RecipientsTest < ActiveSupport::TestCase
   test "sequential steps start at 1 and do not skip" do
     assert Validation::Recipients.consecutive_steps?([ 1, 2 ])
     assert Validation::Recipients.consecutive_steps?([ 1, 1, 2 ])
+    assert Validation::Recipients.consecutive_steps?([ 1, 1, 2, 3 ])
     assert_not Validation::Recipients.consecutive_steps?([ 1, 3 ])
     assert_not Validation::Recipients.consecutive_steps?([ 2, 3 ])
+    assert_not Validation::Recipients.consecutive_steps?([ 0, 1 ])
+  end
+
+  test "empty steps are renormalized back to contiguous numbers" do
+    remaining = [
+      { id: "b", step: 2, name: "Budi" },
+      { id: "c", step: 2, name: "Citra" },
+      { id: "d", step: 3, name: "Dewi" }
+    ]
+
+    result = Validation::Recipients.renormalize_steps(remaining)
+
+    assert_equal [ 1, 1, 2 ], result.map { |row| row[:step] }
+    assert_equal [ "b", "c", "d" ], result.map { |row| row[:id] }
+    assert_equal "Budi", result.first[:name]
   end
 
   test "UI clamps signature and meterai counts without NaN" do

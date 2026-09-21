@@ -17,10 +17,10 @@
   <div class="sign-body sign-body--recipients">
     <div class="sign-header-block">
       <h1 class="sign-title">Who signs it?</h1>
-      <p class="sign-subtitle">Everyone below is invited at the same time. Fields are placed manually in the next step.</p>
+      <p class="sign-subtitle" data-recipients-target="subtitle">Everyone below is invited at the same time. Fields are placed manually in the next step.</p>
     </div>
 
-    <div class="sign-order" role="group" aria-label="Signing order" style="display: none;">
+    <div class="sign-order" role="group" aria-label="Signing order">
       <button type="button" class="sign-order__btn is-active" data-mode="parallel" data-action="recipients#setOrderMode" aria-pressed="true">Parallel</button>
       <button type="button" class="sign-order__btn" data-mode="sequential" data-action="recipients#setOrderMode" aria-pressed="false">Sequential</button>
     </div>
@@ -58,15 +58,26 @@
     <button type="button" class="sign-btn sign-btn--primary" data-recipients-target="continue" data-action="recipients#continue">Continue</button>
   </div>
 
+  <template data-recipients-target="stepGroup">
+    <section class="sign-step-group">
+      <header class="sign-step-group__header">
+        <h2 class="sign-step-group__title" data-step-title>Step 1</h2>
+        <p class="sign-step-group__hint" data-step-hint></p>
+        <p class="sign-step-group__parallel" data-step-parallel hidden></p>
+      </header>
+      <div class="sign-step-group__members" data-step-members></div>
+    </section>
+  </template>
+
   <template data-recipients-target="template">
-    <div class="sign-signer" data-recipients-target="signer">
-      <div class="sign-field sign-field--step">
-        <label data-step-label>Step</label>
-        <div class="sign-count">
-          <button type="button" class="sign-count__btn" data-action="recipients#decrementStep" aria-label="Earlier step">−</button>
-          <input type="number" class="sign-input sign-input--count" min="1" data-field="step" data-action="input->recipients#update">
-          <button type="button" class="sign-count__btn" data-action="recipients#incrementStep" aria-label="Later step">+</button>
-        </div>
+    <div class="sign-signer" data-recipients-target="signer" tabindex="-1">
+      <div class="sign-reorder">
+        <button type="button" class="sign-count__btn" data-action="recipients#moveUp" aria-label="Move earlier">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 14l6-6 6 6"></path></svg>
+        </button>
+        <button type="button" class="sign-count__btn" data-action="recipients#moveDown" aria-label="Move later">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 10l6 6 6-6"></path></svg>
+        </button>
       </div>
 
       <div class="sign-field">
@@ -105,6 +116,13 @@
       <button type="button" class="sign-icon-btn sign-icon-btn--soft" data-action="recipients#remove" aria-label="Remove signer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12h7"></path></svg>
       </button>
+
+      <span class="sign-signer__badge">Parallel signer</span>
+
+      <div class="sign-merge">
+        <button type="button" class="sign-merge__btn" data-action="recipients#mergePrevious">Join previous step</button>
+        <button type="button" class="sign-merge__btn" data-action="recipients#mergeNext">Join next step</button>
+      </div>
 
       <p class="sign-row-error" data-field="row-error" hidden></p>
     </div>

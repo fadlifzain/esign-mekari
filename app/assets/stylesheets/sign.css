@@ -376,6 +376,51 @@ body.sign-flow {
   gap: 8px;
 }
 
+.sign-step-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--sign-border);
+  border-radius: 16px;
+  background: #fbfcfd;
+}
+
+.sign-step-group__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+}
+
+.sign-step-group__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sign-text);
+}
+
+.sign-step-group__hint,
+.sign-step-group__parallel {
+  margin: 0;
+  font-size: 13px;
+}
+
+.sign-step-group__hint {
+  color: var(--sign-muted);
+}
+
+.sign-step-group__parallel {
+  font-weight: 600;
+  color: var(--sign-accent);
+}
+
+.sign-step-group__members {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .sign-order__btn {
   min-height: 36px;
   padding: 0 14px;
@@ -416,7 +461,7 @@ body.sign-flow {
 }
 
 .sign-page.is-sequential .sign-signer {
-  grid-template-columns: 132px minmax(0, 1fr) minmax(0, 1fr) 148px 148px 118px 44px;
+  grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr) 148px 148px 118px 44px;
 }
 
 .sign-signer.is-invalid {
@@ -445,12 +490,56 @@ body.sign-flow {
   min-width: 0;
 }
 
-.sign-field.sign-field--step {
+.sign-reorder,
+.sign-merge,
+.sign-signer__badge {
   display: none;
 }
 
-.sign-page.is-sequential .sign-field.sign-field--step {
+.sign-page.is-sequential .sign-reorder {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sign-page.is-sequential .sign-merge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.sign-page.is-sequential .sign-signer.is-parallel .sign-signer__badge {
+  display: inline-flex;
+  align-items: center;
+  grid-column: 1 / -1;
+  width: fit-content;
+  margin-top: -8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--sign-charge-bg);
+  color: var(--sign-accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sign-merge__btn {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--sign-border-strong);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--sign-label);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sign-merge__btn:disabled,
+.sign-count__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .sign-field--right {
@@ -501,6 +590,20 @@ body.sign-flow {
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign-count__btn:focus-visible,
+.sign-merge__btn:focus-visible,
+.sign-order__btn:focus-visible,
+.sign-input:focus-visible,
+.sign-icon-btn:focus-visible,
+.sign-add-signer:focus-visible,
+.sign-btn:focus-visible {
+  outline: 2px solid var(--sign-accent);
+  outline-offset: 2px;
 }
 
 .sign-charge-value {

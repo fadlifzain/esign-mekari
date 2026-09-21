@@ -244,6 +244,22 @@ class Envelopes::ChargePreviewTest < ActiveSupport::TestCase
     assert_error mismatch, "FIELD_COUNT_MISMATCH", 422
   end
 
+  test "several recipients may share a step and sign in parallel" do
+    recipients = [
+      rina.merge("step" => 1, "meterai_count" => 0),
+      { "name" => "Citra Putri", "email" => "citra.putri@example.test", "signature_count" => 1, "meterai_count" => 0, "step" => 1 },
+      { "name" => "Budi Santoso", "email" => "budi.santoso@example.test", "signature_count" => 1, "meterai_count" => 0, "step" => 2 }
+    ]
+
+    result = preview("order_mode" => "sequential", "recipients" => recipients)
+
+    assert result.ok?
+    assert_equal [
+      { step: 1, recipient_emails: [ "rina.halim@example.test", "citra.putri@example.test" ] },
+      { step: 2, recipient_emails: [ "budi.santoso@example.test" ] }
+    ], result.value[:steps]
+  end
+
   test "step sequence must start at 1 without gaps" do
     result = preview(
       "order_mode" => "sequential",

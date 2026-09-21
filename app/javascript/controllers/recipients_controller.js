@@ -1,22 +1,31 @@
 import { Controller } from "@hotwired/stimulus"
 import {
+  canMergeRecipient,
+  canMoveRecipient,
   clampMeteraiCount,
   clampSignatureCount,
-  clampStep,
   deriveTotals,
   displayMoney,
+  groupByStep,
   hasErrors,
+  mergeRecipient,
+  moveRecipient,
   recipientChargeCents,
+  renormalizeSteps,
   SIGNATURE_PRICE_CENTS,
   SIGNATURE_QUOTA,
   METERAI_PRICE_CENTS,
   validateState
 } from "sign/recipients"
 
+const PARALLEL_COPY = "Everyone below is invited at the same time. Fields are placed manually in the next step."
+const SEQUENTIAL_COPY = "The next step is invited only after everyone in the previous step has finished. Recipients who share a step sign in parallel."
+
 export default class extends Controller {
   static targets = [
     "list",
     "template",
+    "stepGroup",
     "signer",
     "signatureLine",
     "meteraiLine",
@@ -25,7 +34,8 @@ export default class extends Controller {
     "meteraiQuota",
     "continue",
     "banner",
-    "add"
+    "add",
+    "subtitle"
   ]
 
   static values = {
@@ -37,71 +47,93 @@ export default class extends Controller {
   }
 
   connect() {
-    if (!this.signersValue.length) {
-      this.signersValue = [this.blankSigner()]
-    }
+    this.signerSeq = 0
     this.previewGeneration = 0
+    const seed = this.signersValue.length ? this.signersValue : [this.blankSigner()]
+    this.signersValue = this.withIds(seed)
     this.render()
   }
 
   setOrderMode(event) {
     this.orderModeValue = event.currentTarget.dataset.mode
+    if (this.orderModeValue === "sequential") {
+      this.signersValue = renormalizeSteps(this.signersValue)
+    }
     this.render()
   }
 
   addSigner() {
     if (this.signersValue.length >= SIGNATURE_QUOTA) return
-    this.signersValue = [...this.signersValue, this.blankSigner()]
+    const signer = this.blankSigner()
+    if (this.orderModeValue === "sequential") {
+      const maxStep = this.signersValue.reduce((max, row) => Math.max(max, row.step || 1), 0)
+      signer.step = maxStep + 1
+    }
+    this.signersValue = [...this.signersValue, signer]
     this.render()
   }
 
   remove(event) {
-    const index = this.indexFromEvent(event)
-    const next = this.signersValue.filter((_, i) => i !== index)
-    this.signersValue = next.length ? next : [this.blankSigner()]
+    const id = this.idFromEvent(event)
+    const next = this.signersValue.filter((signer) => signer.id !== id)
+    const remaining = next.length ? next : [this.blankSigner()]
+    this.signersValue = this.orderModeValue === "sequential" ? renormalizeSteps(remaining) : remaining
+    this.render()
+  }
+
+  moveUp(event) {
+    this.reorder(event, (signers, id) => moveRecipient(signers, id, "up"))
+  }
+
+  moveDown(event) {
+    this.reorder(event, (signers, id) => moveRecipient(signers, id, "down"))
+  }
+
+  mergePrevious(event) {
+    this.reorder(event, (signers, id) => mergeRecipient(signers, id, "previous"))
+  }
+
+  mergeNext(event) {
+    this.reorder(event, (signers, id) => mergeRecipient(signers, id, "next"))
+  }
+
+  reorder(event, transform) {
+    const id = this.idFromEvent(event)
+    this.signersValue = transform(this.signersValue, id)
     this.render()
   }
 
   incrementSignature(event) {
-    this.patch(this.indexFromEvent(event), (signer) => this.withSignatureCount(signer, signer.signature_count + 1))
+    this.patch(this.idFromEvent(event), (signer) => this.withSignatureCount(signer, signer.signature_count + 1))
   }
 
   decrementSignature(event) {
-    this.patch(this.indexFromEvent(event), (signer) => this.withSignatureCount(signer, signer.signature_count - 1))
+    this.patch(this.idFromEvent(event), (signer) => this.withSignatureCount(signer, signer.signature_count - 1))
   }
 
   incrementMeterai(event) {
-    this.patch(this.indexFromEvent(event), (signer) => ({
+    this.patch(this.idFromEvent(event), (signer) => ({
       ...signer,
       meterai_count: clampMeteraiCount(signer.meterai_count + 1, signer.signature_count)
     }))
   }
 
   decrementMeterai(event) {
-    this.patch(this.indexFromEvent(event), (signer) => ({
+    this.patch(this.idFromEvent(event), (signer) => ({
       ...signer,
       meterai_count: clampMeteraiCount(signer.meterai_count - 1, signer.signature_count)
     }))
   }
 
-  incrementStep(event) {
-    this.patch(this.indexFromEvent(event), (signer) => ({ ...signer, step: clampStep(signer.step + 1) }))
-  }
-
-  decrementStep(event) {
-    this.patch(this.indexFromEvent(event), (signer) => ({ ...signer, step: clampStep(signer.step - 1) }))
-  }
-
   update(event) {
-    const index = this.indexFromEvent(event)
+    const id = this.idFromEvent(event)
     const field = event.target.dataset.field
-    this.signersValue = this.signersValue.map((signer, i) => {
-      if (i !== index) return signer
+    this.signersValue = this.signersValue.map((signer) => {
+      if (signer.id !== id) return signer
       if (field === "signature_count") return this.withSignatureCount(signer, event.target.value)
       if (field === "meterai_count") {
         return { ...signer, meterai_count: clampMeteraiCount(event.target.value, signer.signature_count) }
       }
-      if (field === "step") return { ...signer, step: clampStep(event.target.value) }
       return { ...signer, [field]: event.target.value }
     })
     this.refresh()
@@ -164,66 +196,125 @@ export default class extends Controller {
     }
   }
 
-  patch(index, transform) {
-    this.signersValue = this.signersValue.map((signer, i) => (i === index ? transform(signer) : signer))
+  patch(id, transform) {
+    this.signersValue = this.signersValue.map((signer) => (signer.id === id ? transform(signer) : signer))
     this.render()
   }
 
   render() {
-    this.element.classList.toggle("is-sequential", this.orderModeValue === "sequential")
+    const focus = this.captureFocus()
+    const sequential = this.orderModeValue === "sequential"
+    this.element.classList.toggle("is-sequential", sequential)
     this.element.querySelectorAll("[data-mode]").forEach((button) => {
       button.classList.toggle("is-active", button.dataset.mode === this.orderModeValue)
       button.setAttribute("aria-pressed", button.dataset.mode === this.orderModeValue ? "true" : "false")
     })
+    if (this.hasSubtitleTarget) {
+      this.subtitleTarget.textContent = sequential ? SEQUENTIAL_COPY : PARALLEL_COPY
+    }
 
     this.listTarget.innerHTML = ""
-    this.signersValue.forEach((signer, index) => {
-      const node = this.templateTarget.content.firstElementChild.cloneNode(true)
-      this.bindRow(node, signer, index)
-      this.listTarget.appendChild(node)
-    })
+    if (sequential) {
+      groupByStep(this.signersValue).forEach((group, groupIndex, groups) => {
+        const section = this.stepGroupTarget.content.firstElementChild.cloneNode(true)
+        this.bindStepGroup(section, group, groupIndex, groups.length)
+        group.recipients.forEach((signer) => {
+          section.querySelector("[data-step-members]").appendChild(this.buildRow(signer, group))
+        })
+        this.listTarget.appendChild(section)
+      })
+    } else {
+      this.signersValue.forEach((signer) => this.listTarget.appendChild(this.buildRow(signer)))
+    }
 
     if (this.hasAddTarget) {
       this.addTarget.hidden = this.signersValue.length >= SIGNATURE_QUOTA
     }
 
     this.refresh()
+    this.restoreFocus(focus)
   }
 
-  bindRow(node, signer, index) {
+  bindStepGroup(section, group, groupIndex, totalGroups) {
+    const title = section.querySelector("[data-step-title]")
+    const hint = section.querySelector("[data-step-hint]")
+    const parallel = section.querySelector("[data-step-parallel]")
+    title.textContent = `Step ${group.step}`
+    hint.textContent = groupIndex === 0
+      ? "Invited immediately."
+      : `Invited after step ${group.step - 1} is complete.`
+    if (group.recipients.length > 1) {
+      parallel.hidden = false
+      parallel.textContent = `${group.recipients.length} recipients sign in parallel`
+    } else {
+      parallel.hidden = true
+      parallel.textContent = ""
+    }
+    section.setAttribute("aria-label", `Signing step ${group.step} of ${totalGroups}`)
+  }
+
+  buildRow(signer, group) {
+    const node = this.templateTarget.content.firstElementChild.cloneNode(true)
+    this.bindRow(node, signer, group)
+    return node
+  }
+
+  bindRow(node, signer, group) {
+    const index = this.signersValue.findIndex((row) => row.id === signer.id)
     const nameInput = node.querySelector('[data-field="name"]')
     const emailInput = node.querySelector('[data-field="email"]')
     const signatureInput = node.querySelector('[data-field="signature_count"]')
     const meteraiInput = node.querySelector('[data-field="meterai_count"]')
-    const stepInput = node.querySelector('[data-field="step"]')
 
-    nameInput.id = `signer-name-${index}`
-    emailInput.id = `signer-email-${index}`
-    signatureInput.id = `signer-signature-${index}`
-    meteraiInput.id = `signer-meterai-${index}`
-    stepInput.id = `signer-step-${index}`
+    node.dataset.signerId = signer.id
+    node.classList.toggle("is-parallel", Boolean(group && group.recipients.length > 1))
+
+    nameInput.id = `signer-name-${signer.id}`
+    emailInput.id = `signer-email-${signer.id}`
+    signatureInput.id = `signer-signature-${signer.id}`
+    meteraiInput.id = `signer-meterai-${signer.id}`
 
     node.querySelector("[data-name-label]").setAttribute("for", nameInput.id)
     node.querySelector("[data-email-label]").setAttribute("for", emailInput.id)
     node.querySelector("[data-signature-label]").setAttribute("for", signatureInput.id)
     node.querySelector("[data-meterai-label]").setAttribute("for", meteraiInput.id)
-    node.querySelector("[data-step-label]").setAttribute("for", stepInput.id)
 
     nameInput.value = signer.name || ""
     emailInput.value = signer.email || ""
     signatureInput.value = signer.signature_count
     meteraiInput.value = signer.meterai_count
-    stepInput.value = signer.step || 1
     node.querySelector('[data-field="subtotal"]').textContent = displayMoney(recipientChargeCents(signer))
 
-    const name = signer.name || `recipient ${index + 1}`
-    node.querySelector('[data-action="recipients#decrementSignature"]').setAttribute("aria-label", `Fewer signatures for ${name}`)
-    node.querySelector('[data-action="recipients#incrementSignature"]').setAttribute("aria-label", `More signatures for ${name}`)
-    node.querySelector('[data-action="recipients#decrementMeterai"]').setAttribute("aria-label", `Fewer eMeterai for ${name}`)
-    node.querySelector('[data-action="recipients#incrementMeterai"]').setAttribute("aria-label", `More eMeterai for ${name}`)
-    node.querySelector('[data-action="recipients#decrementStep"]').setAttribute("aria-label", `Earlier step for ${name}`)
-    node.querySelector('[data-action="recipients#incrementStep"]').setAttribute("aria-label", `Later step for ${name}`)
-    node.querySelector('[data-action="recipients#remove"]').setAttribute("aria-label", `Remove ${name}`)
+    const name = signer.name?.trim() || `recipient ${index + 1}`
+    this.setAria(node, "recipients#decrementSignature", `Fewer signatures for ${name}`)
+    this.setAria(node, "recipients#incrementSignature", `More signatures for ${name}`)
+    this.setAria(node, "recipients#decrementMeterai", `Fewer eMeterai for ${name}`)
+    this.setAria(node, "recipients#incrementMeterai", `More eMeterai for ${name}`)
+    this.setAria(node, "recipients#remove", `Remove ${name}`)
+    this.bindReorder(node, signer, name)
+  }
+
+  bindReorder(node, signer, name) {
+    const moveUp = node.querySelector('[data-action="recipients#moveUp"]')
+    const moveDown = node.querySelector('[data-action="recipients#moveDown"]')
+    const mergePrevious = node.querySelector('[data-action="recipients#mergePrevious"]')
+    const mergeNext = node.querySelector('[data-action="recipients#mergeNext"]')
+    if (!moveUp) return
+
+    moveUp.setAttribute("aria-label", `Move ${name} earlier`)
+    moveDown.setAttribute("aria-label", `Move ${name} later`)
+    mergePrevious.setAttribute("aria-label", `Merge ${name} into previous step`)
+    mergeNext.setAttribute("aria-label", `Merge ${name} into next step`)
+
+    moveUp.disabled = !canMoveRecipient(this.signersValue, signer.id, "up")
+    moveDown.disabled = !canMoveRecipient(this.signersValue, signer.id, "down")
+    mergePrevious.disabled = !canMergeRecipient(this.signersValue, signer.id, "previous")
+    mergeNext.disabled = !canMergeRecipient(this.signersValue, signer.id, "next")
+  }
+
+  setAria(node, action, label) {
+    const button = node.querySelector(`[data-action="${action}"]`)
+    if (button) button.setAttribute("aria-label", label)
   }
 
   refresh() {
@@ -234,14 +325,23 @@ export default class extends Controller {
     this.signatureQuotaTarget.textContent = `Signature ${totals.signatureQuotaUsed}`
     this.meteraiQuotaTarget.textContent = `eMeterai ${totals.meteraiQuotaUsed}`
 
-    this.signerTargets.forEach((row, index) => {
-      const signer = this.signersValue[index]
+    this.signerTargets.forEach((row) => {
+      const signer = this.signerFromRow(row)
       if (!signer) return
       row.querySelector('[data-field="subtotal"]').textContent = displayMoney(recipientChargeCents(signer))
       const signatureInput = row.querySelector('[data-field="signature_count"]')
       const meteraiInput = row.querySelector('[data-field="meterai_count"]')
       if (document.activeElement !== signatureInput) signatureInput.value = signer.signature_count
       if (document.activeElement !== meteraiInput) meteraiInput.value = signer.meterai_count
+
+      const index = this.signersValue.findIndex((rowSigner) => rowSigner.id === signer.id)
+      const name = signer.name?.trim() || `recipient ${index + 1}`
+      this.setAria(row, "recipients#decrementSignature", `Fewer signatures for ${name}`)
+      this.setAria(row, "recipients#incrementSignature", `More signatures for ${name}`)
+      this.setAria(row, "recipients#decrementMeterai", `Fewer eMeterai for ${name}`)
+      this.setAria(row, "recipients#incrementMeterai", `More eMeterai for ${name}`)
+      this.setAria(row, "recipients#remove", `Remove ${name}`)
+      this.bindReorder(row, signer, name)
     })
 
     const errors = validateState(this.signersValue, this.orderModeValue)
@@ -249,7 +349,8 @@ export default class extends Controller {
   }
 
   applyErrors(errors, bannerMessage) {
-    this.signerTargets.forEach((row, index) => {
+    this.signerTargets.forEach((row) => {
+      const index = this.signersValue.findIndex((signer) => signer.id === row.dataset.signerId)
       const messages = errors.rows[index] || []
       row.classList.toggle("is-invalid", messages.length > 0)
       const output = row.querySelector('[data-field="row-error"]')
@@ -321,11 +422,64 @@ export default class extends Controller {
   }
 
   blankSigner() {
-    return { name: "", email: "", signature_count: 1, meterai_count: 0, step: 1 }
+    return { id: this.nextSignerId(), name: "", email: "", signature_count: 1, meterai_count: 0, step: 1 }
   }
 
-  indexFromEvent(event) {
-    const row = event.target.closest("[data-recipients-target='signer']")
-    return this.signerTargets.indexOf(row)
+  withIds(signers) {
+    return signers.map((signer) => (signer.id ? signer : { ...signer, id: this.nextSignerId() }))
+  }
+
+  nextSignerId() {
+    this.signerSeq = (this.signerSeq || 0) + 1
+    return `signer-${this.signerSeq}`
+  }
+
+  idFromEvent(event) {
+    return event.target.closest("[data-signer-id]")?.dataset.signerId
+  }
+
+  signerFromRow(row) {
+    return this.signersValue.find((signer) => signer.id === row.dataset.signerId)
+  }
+
+  captureFocus() {
+    const active = document.activeElement
+    if (!active || !this.element.contains(active)) return null
+    const row = active.closest("[data-signer-id]")
+    return {
+      signerId: row?.dataset.signerId,
+      action: active.dataset.action,
+      field: active.dataset.field,
+      mode: active.dataset.mode,
+      selectionStart: active.selectionStart,
+      selectionEnd: active.selectionEnd
+    }
+  }
+
+  restoreFocus(focus) {
+    if (!focus) return
+    if (focus.mode) {
+      this.element.querySelector(`[data-mode="${focus.mode}"]`)?.focus()
+      return
+    }
+    if (!focus.signerId) return
+
+    const row = this.listTarget.querySelector(`[data-signer-id="${focus.signerId}"]`)
+    if (!row) return
+
+    const byAction = focus.action ? row.querySelector(`[data-action="${focus.action}"]`) : null
+    const byField = focus.field ? row.querySelector(`[data-field="${focus.field}"]`) : null
+    const fallback = [...row.querySelectorAll("button, input")].find((node) => !node.disabled)
+    const el = (byAction && !byAction.disabled && byAction) || byField || fallback
+    if (!el) return
+
+    el.focus()
+    if (typeof focus.selectionStart === "number" && typeof el.setSelectionRange === "function") {
+      try {
+        el.setSelectionRange(focus.selectionStart, focus.selectionEnd)
+      } catch {
+        // number inputs may reject setSelectionRange
+      }
+    }
   }
 }

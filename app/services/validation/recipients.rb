@@ -36,6 +36,16 @@ module Validation
       unique.first == 1 && unique == (1..unique.last).to_a
     end
 
+    def renormalize_steps(recipients)
+      unique = recipients.map { |row| row[:step] || row["step"] }.uniq.sort
+      mapping = unique.each_with_index.to_h { |step, index| [ step, index + 1 ] }
+
+      recipients.map do |row|
+        current = row[:step] || row["step"]
+        row.merge(row.key?(:step) ? { step: mapping[current] } : { "step" => mapping[current] })
+      end
+    end
+
     def clamp_signature_count(raw)
       parse_int(raw, SignConfig::SIGNATURE_MIN).clamp(SignConfig::SIGNATURE_MIN, SignConfig::SIGNATURE_MAX)
     end

@@ -85,6 +85,135 @@ export function consecutiveSteps(steps) {
   return unique.every((step, index) => step === index + 1)
 }
 
+export function groupByStep(recipients) {
+  const sorted = recipients
+    .map((recipient, index) => ({ recipient, index }))
+    .sort((a, b) => {
+      const stepA = Number.isInteger(a.recipient.step) && a.recipient.step >= 1 ? a.recipient.step : 1
+      const stepB = Number.isInteger(b.recipient.step) && b.recipient.step >= 1 ? b.recipient.step : 1
+      if (stepA !== stepB) return stepA - stepB
+      return a.index - b.index
+    })
+
+  const groups = []
+  sorted.forEach(({ recipient }) => {
+    const step = Number.isInteger(recipient.step) && recipient.step >= 1 ? recipient.step : 1
+    const last = groups[groups.length - 1]
+    if (last && last.step === step) {
+      last.recipients.push(recipient)
+    } else {
+      groups.push({ step, recipients: [recipient] })
+    }
+  })
+  return groups
+}
+
+export function flattenGroups(groups) {
+  return groups.flatMap((group, index) =>
+    group.recipients.map((recipient) => ({ ...recipient, step: index + 1 }))
+  )
+}
+
+export function renormalizeSteps(recipients) {
+  return flattenGroups(groupByStep(recipients))
+}
+
+function locateRecipient(recipients, id) {
+  const groups = groupByStep(recipients)
+  for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+    const indexInGroup = groups[groupIndex].recipients.findIndex((recipient) => recipient.id === id)
+    if (indexInGroup >= 0) {
+      return { groups, groupIndex, indexInGroup }
+    }
+  }
+  return null
+}
+
+function sameRecipients(left, right) {
+  return left.length === right.length && left.every((recipient, index) => (
+    recipient.id === right[index].id && recipient.step === right[index].step
+  ))
+}
+
+export function moveRecipient(recipients, id, direction) {
+  const found = locateRecipient(recipients, id)
+  if (!found) return recipients
+
+  const { groups, groupIndex, indexInGroup } = found
+  const group = groups[groupIndex]
+  const recipient = group.recipients[indexInGroup]
+
+  if (direction === "up") {
+    if (group.recipients.length > 1) {
+      groups[groupIndex] = { ...group, recipients: group.recipients.filter((_, index) => index !== indexInGroup) }
+      groups.splice(groupIndex, 0, { step: 0, recipients: [recipient] })
+      return flattenGroups(groups)
+    }
+    if (groupIndex === 0) return recipients
+    const previous = groups[groupIndex - 1]
+    groups[groupIndex - 1] = group
+    groups[groupIndex] = previous
+    return flattenGroups(groups)
+  }
+
+  if (direction === "down") {
+    if (group.recipients.length > 1) {
+      groups[groupIndex] = { ...group, recipients: group.recipients.filter((_, index) => index !== indexInGroup) }
+      groups.splice(groupIndex + 1, 0, { step: 0, recipients: [recipient] })
+      return flattenGroups(groups)
+    }
+    if (groupIndex === groups.length - 1) return recipients
+    const next = groups[groupIndex + 1]
+    groups[groupIndex + 1] = group
+    groups[groupIndex] = next
+    return flattenGroups(groups)
+  }
+
+  return recipients
+}
+
+export function mergeRecipient(recipients, id, direction) {
+  const found = locateRecipient(recipients, id)
+  if (!found) return recipients
+
+  const { groups, groupIndex, indexInGroup } = found
+  const group = groups[groupIndex]
+  const recipient = group.recipients[indexInGroup]
+  const remaining = group.recipients.filter((_, index) => index !== indexInGroup)
+
+  if (direction === "previous") {
+    if (groupIndex === 0) return recipients
+    groups[groupIndex - 1] = {
+      ...groups[groupIndex - 1],
+      recipients: [...groups[groupIndex - 1].recipients, recipient]
+    }
+    if (remaining.length === 0) groups.splice(groupIndex, 1)
+    else groups[groupIndex] = { ...group, recipients: remaining }
+    return flattenGroups(groups)
+  }
+
+  if (direction === "next") {
+    if (groupIndex === groups.length - 1) return recipients
+    groups[groupIndex + 1] = {
+      ...groups[groupIndex + 1],
+      recipients: [recipient, ...groups[groupIndex + 1].recipients]
+    }
+    if (remaining.length === 0) groups.splice(groupIndex, 1)
+    else groups[groupIndex] = { ...group, recipients: remaining }
+    return flattenGroups(groups)
+  }
+
+  return recipients
+}
+
+export function canMoveRecipient(recipients, id, direction) {
+  return !sameRecipients(recipients, moveRecipient(recipients, id, direction))
+}
+
+export function canMergeRecipient(recipients, id, direction) {
+  return !sameRecipients(recipients, mergeRecipient(recipients, id, direction))
+}
+
 export function validateState(recipients, orderMode) {
   const errors = { global: [], rows: recipients.map(() => []) }
 

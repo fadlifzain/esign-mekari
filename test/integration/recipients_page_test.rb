@@ -12,6 +12,14 @@ class RecipientsPageTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Total charge"
     assert_includes response.body, "Parallel"
     assert_includes response.body, "Sequential"
+    assert_includes response.body, 'aria-label="Signing order"'
+    assert_includes response.body, 'data-action="recipients#moveUp"'
+    assert_includes response.body, 'data-action="recipients#moveDown"'
+    assert_includes response.body, 'data-action="recipients#mergePrevious"'
+    assert_includes response.body, 'data-action="recipients#mergeNext"'
+    assert_includes response.body, "Join previous step"
+    assert_includes response.body, "Parallel signer"
+    assert_no_match(/sign-order"[^>]*style="display:\s*none/, response.body)
     assert_includes response.body, 'data-recipients-target="signatureQuota"'
     assert_includes response.body, 'data-recipients-target="meteraiQuota"'
     assert_includes response.body, 'data-recipients-target="signatureLine"'

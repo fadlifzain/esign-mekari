@@ -3,11 +3,17 @@ import { test } from "node:test"
 import { clampField, fieldInBounds } from "../../app/javascript/sign/fields.js"
 import { formatApi, formatDisplay } from "../../app/javascript/sign/money.js"
 import {
+  canMergeRecipient,
+  canMoveRecipient,
   clampMeteraiCount,
   clampSignatureCount,
+  consecutiveSteps,
   deriveTotals,
   hasErrors,
+  mergeRecipient,
+  moveRecipient,
   recipientChargeCents,
+  renormalizeSteps,
   validateState
 } from "../../app/javascript/sign/recipients.js"
 
@@ -118,4 +124,56 @@ test("UI clamps field coordinates while out-of-range stays invalid for the API",
   assert.equal(fieldInBounds("meterai", 0, 477), false)
   assert.equal(fieldInBounds("signature", 420, 500), true)
   assert.equal(fieldInBounds("meterai", 520, 476), true)
+})
+
+function signer(id, step, extra = {}) {
+  return {
+    id,
+    name: id,
+    email: `${id}@example.test`,
+    signature_count: 1,
+    meterai_count: 0,
+    step,
+    placed_fields: [{ id: `field-${id}` }],
+    ...extra
+  }
+}
+
+test("sequential steps must be contiguous from 1 and may share a step", () => {
+  assert.equal(consecutiveSteps([1, 1, 2, 3]), true)
+  assert.equal(consecutiveSteps([1, 3]), false)
+  assert.equal(consecutiveSteps([2, 3]), false)
+  assert.equal(consecutiveSteps([0, 1]), false)
+})
+
+test("deleting the last member of a step renormalizes the remaining numbers", () => {
+  const remaining = [
+    signer("b", 2),
+    signer("c", 2),
+    signer("d", 3)
+  ]
+  const result = renormalizeSteps(remaining)
+
+  assert.deepEqual(result.map((row) => row.step), [1, 1, 2])
+  assert.deepEqual(result.map((row) => row.id), ["b", "c", "d"])
+  assert.deepEqual(result[0].placed_fields, [{ id: "field-b" }])
+})
+
+test("move and merge keep recipient data and produce contiguous steps", () => {
+  const start = [signer("a", 1), signer("b", 1), signer("c", 2)]
+
+  const split = moveRecipient(start, "b", "down")
+  assert.deepEqual(split.map((row) => [row.id, row.step]), [["a", 1], ["b", 2], ["c", 3]])
+  assert.deepEqual(split.find((row) => row.id === "b").placed_fields, [{ id: "field-b" }])
+  assert.equal(consecutiveSteps(split.map((row) => row.step)), true)
+
+  const swapped = moveRecipient([signer("a", 1), signer("b", 2)], "b", "up")
+  assert.deepEqual(swapped.map((row) => [row.id, row.step]), [["b", 1], ["a", 2]])
+
+  const merged = mergeRecipient(start, "c", "previous")
+  assert.deepEqual(merged.map((row) => [row.id, row.step]), [["a", 1], ["b", 1], ["c", 1]])
+  assert.equal(canMoveRecipient(start, "a", "up"), true)
+  assert.equal(canMoveRecipient([signer("a", 1)], "a", "up"), false)
+  assert.equal(canMergeRecipient(start, "c", "previous"), true)
+  assert.equal(canMergeRecipient(start, "a", "previous"), false)
 })
