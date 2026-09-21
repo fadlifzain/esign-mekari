@@ -1,0 +1,540 @@
+:root {
+  --sign-accent: #4b4ede;
+  --sign-text: #1e1f24;
+  --sign-muted: #5b6472;
+  --sign-soft: #8a93a0;
+  --sign-border: #e4e7ec;
+  --sign-border-strong: #d8dce3;
+  --sign-border-dashed: #c7cdd8;
+  --sign-success-bg: #e8f5ee;
+  --sign-success: #2a8b5f;
+  --sign-charge-bg: #f4f5fe;
+  --sign-charge-border: #dcdef9;
+  --sign-footer-bg: #fafbfc;
+  --sign-dropzone-bg: #fbfcfd;
+  --sign-label: #3c4450;
+}
+
+body.sign-flow {
+  margin: 0;
+  min-height: 100vh;
+  background: #f5f4ef;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--sign-text);
+}
+
+.sign-page {
+  max-width: 1160px;
+  min-height: 100vh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.sign-stepper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 56px;
+  border-bottom: 1px solid var(--sign-border);
+  box-sizing: border-box;
+}
+
+.sign-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sign-step__badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.sign-step__badge--active {
+  background: var(--sign-accent);
+  color: #ffffff;
+}
+
+.sign-step__badge--done {
+  background: var(--sign-success-bg);
+  color: var(--sign-success);
+}
+
+.sign-step__badge--todo {
+  background: #ffffff;
+  border: 1px solid var(--sign-border-strong);
+  color: var(--sign-soft);
+}
+
+.sign-step__label {
+  font-size: 14px;
+}
+
+.sign-step__label--active {
+  font-weight: 600;
+  color: var(--sign-text);
+}
+
+.sign-step__label--done {
+  font-weight: 500;
+  color: var(--sign-muted);
+}
+
+.sign-step__label--todo {
+  font-weight: 500;
+  color: var(--sign-soft);
+}
+
+.sign-stepper__connector {
+  width: 64px;
+  height: 1px;
+  background: var(--sign-border-strong);
+}
+
+.sign-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 36px 56px;
+  box-sizing: border-box;
+}
+
+.sign-body--recipients {
+  gap: 24px;
+}
+
+.sign-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--sign-text);
+}
+
+.sign-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sign-muted);
+}
+
+.sign-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sign-section[hidden] {
+  display: none;
+}
+
+.sign-section__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sign-text);
+}
+
+.sign-dropzone__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sign-dropzone {
+  border: 1.5px dashed var(--sign-border-dashed);
+  border-radius: 12px;
+  background: var(--sign-dropzone-bg);
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.sign-dropzone.is-dragover {
+  border-color: var(--sign-accent);
+  background: #f4f5fe;
+}
+
+.sign-dropzone__browse {
+  color: var(--sign-accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.sign-dropzone__icon {
+  color: var(--sign-accent);
+}
+
+.sign-dropzone__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.sign-dropzone__copy strong,
+.sign-dropzone__copy .primary {
+  font-size: 15px;
+  color: var(--sign-label);
+  font-weight: 400;
+}
+
+.sign-dropzone__copy a {
+  color: var(--sign-accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.sign-dropzone__hint {
+  font-size: 13px;
+  color: var(--sign-muted);
+}
+
+.sign-or {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.sign-or__line {
+  flex-grow: 1;
+  height: 1px;
+  background: var(--sign-border);
+}
+
+.sign-or__text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--sign-soft);
+}
+
+.sign-cloud-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 8px;
+  color: var(--sign-accent);
+  text-decoration: none;
+}
+
+.sign-file {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--sign-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.sign-file__check {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sign-success-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--sign-success);
+}
+
+.sign-file__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
+}
+
+.sign-file__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sign-text);
+}
+
+.sign-file__info {
+  font-size: 13px;
+  color: var(--sign-muted);
+}
+
+.sign-icon-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--sign-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign-icon-btn--soft {
+  color: var(--sign-soft);
+}
+
+.sign-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 56px;
+  border-top: 1px solid var(--sign-border);
+  background: var(--sign-footer-bg);
+  box-sizing: border-box;
+}
+
+.sign-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  border: none;
+  font-family: inherit;
+}
+
+.sign-btn--primary {
+  min-width: 140px;
+  background: var(--sign-accent);
+  color: #ffffff;
+}
+
+.sign-btn--ghost {
+  padding: 0 16px;
+  color: var(--sign-label);
+  background: transparent;
+}
+
+.sign-btn--secondary {
+  padding: 0 20px;
+  border: 1px solid var(--sign-border-strong);
+  background: #ffffff;
+  color: var(--sign-text);
+}
+
+.sign-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sign-signers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sign-signer {
+  border: 1px solid var(--sign-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 170px 118px 44px;
+  gap: 16px;
+  align-items: end;
+  box-sizing: border-box;
+}
+
+.sign-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sign-field--right {
+  text-align: right;
+}
+
+.sign-field label,
+.sign-field .sign-field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sign-label);
+}
+
+.sign-input {
+  height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--sign-border-strong);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--sign-text);
+  background: #ffffff;
+  font-family: inherit;
+}
+
+.sign-input--count {
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.sign-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sign-count__btn {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid var(--sign-border-strong);
+  background: #ffffff;
+  border-radius: 8px;
+  color: var(--sign-label);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sign-charge-value {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--sign-text);
+}
+
+.sign-add-signer {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px dashed var(--sign-border-dashed);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--sign-accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sign-summary {
+  margin-top: auto;
+  border: 1px solid var(--sign-charge-border);
+  background: var(--sign-charge-bg);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.sign-summary__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sign-summary__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sign-text);
+}
+
+.sign-summary__hint {
+  font-size: 13px;
+  color: var(--sign-muted);
+}
+
+.sign-summary__total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.sign-summary__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--sign-muted);
+}
+
+.sign-summary__amount {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.4px;
+  color: var(--sign-text);
+}
+
+@media (max-width: 960px) {
+  .sign-stepper,
+  .sign-body,
+  .sign-footer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .sign-signer {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .sign-field--right {
+    text-align: left;
+  }
+
+  .sign-charge-value {
+    justify-content: flex-start;
+  }
+
+  .sign-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sign-summary__total {
+    align-items: flex-start;
+  }
+}

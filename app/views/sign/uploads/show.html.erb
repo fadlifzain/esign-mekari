@@ -1,0 +1,71 @@
+<% content_for :title, "Upload document · Esign Mekari" %>
+<% content_for :body_class, "sign-flow" %>
+
+<div class="sign-page" data-controller="upload">
+  <%= render "sign/shared/stepper", current_step: 1 %>
+
+  <div class="sign-body">
+    <h1 class="sign-title">What needs to be signed?</h1>
+
+    <div class="sign-section">
+      <span class="sign-section__label">Upload document</span>
+
+      <input
+        id="document-upload"
+        class="sign-dropzone__input"
+        type="file"
+        name="document"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        data-upload-target="input"
+        data-action="change->upload#change"
+      >
+
+      <div
+        class="sign-dropzone"
+        data-action="click->upload#browse dragover->upload#dragover dragleave->upload#dragleave drop->upload#drop"
+      >
+        <svg class="sign-dropzone__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 16V4"></path>
+          <path d="m7.5 8.5 4.5-4.5 4.5 4.5"></path>
+          <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"></path>
+        </svg>
+
+        <div class="sign-dropzone__copy">
+          <div class="primary">Drop your file here or <span class="sign-dropzone__browse">Browse</span></div>
+          <div class="sign-dropzone__hint">One document per request. PDF, JPG, JPEG, PNG, DOC or DOCX.</div>
+        </div>
+
+        <div class="sign-or">
+          <div class="sign-or__line"></div>
+          <span class="sign-or__text">OR</span>
+          <div class="sign-or__line"></div>
+        </div>
+
+        <a href="#cloud" class="sign-cloud-link" data-action="click->upload#ignore:stop">
+          From cloud
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="sign-section" data-upload-target="preview" hidden>
+      <span class="sign-section__label">Your document</span>
+      <div class="sign-file">
+        <div class="sign-file__check">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4 10-10"></path></svg>
+        </div>
+        <div class="sign-file__meta">
+          <span class="sign-file__name" data-upload-target="name"></span>
+          <span class="sign-file__info" data-upload-target="info"></span>
+        </div>
+        <button type="button" class="sign-icon-btn" data-upload-target="remove" data-action="click->upload#remove:stop" aria-label="Remove document">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sign-footer">
+    <%= link_to "Continue", sign_recipients_path(@workspace_id), class: "sign-btn sign-btn--primary" %>
+  </div>
+</div>
